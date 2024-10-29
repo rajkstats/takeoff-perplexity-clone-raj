@@ -14,7 +14,7 @@ export const createProfile = async (data: InsertProfile) => {
     return newProfile
   } catch (error) {
     console.error("Error creating profile:", error)
-    throw new Error("Failed to create profile")
+    return null
   }
 }
 
@@ -23,16 +23,20 @@ export const getProfileByUserId = async (userId: string) => {
     const profile = await db.query.profilesTable.findFirst({
       where: eq(profilesTable.userId, userId)
     })
-
     return profile
   } catch (error) {
     console.error("Error getting profile by user ID:", error)
-    throw new Error("Failed to get profile")
+    return null
   }
 }
 
 export const getAllProfiles = async (): Promise<SelectProfile[]> => {
-  return db.query.profilesTable.findMany()
+  try {
+    return await db.query.profilesTable.findMany()
+  } catch (error) {
+    console.error("Error getting all profiles:", error)
+    return []
+  }
 }
 
 export const updateProfile = async (
@@ -48,7 +52,7 @@ export const updateProfile = async (
     return updatedProfile
   } catch (error) {
     console.error("Error updating profile:", error)
-    throw new Error("Failed to update profile")
+    return null
   }
 }
 
@@ -65,15 +69,16 @@ export const updateProfileByStripeCustomerId = async (
     return updatedProfile
   } catch (error) {
     console.error("Error updating profile by stripe customer ID:", error)
-    throw new Error("Failed to update profile")
+    return null
   }
 }
 
 export const deleteProfile = async (userId: string) => {
   try {
     await db.delete(profilesTable).where(eq(profilesTable.userId, userId))
+    return true
   } catch (error) {
     console.error("Error deleting profile:", error)
-    throw new Error("Failed to delete profile")
+    return false
   }
 }
