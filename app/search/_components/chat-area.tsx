@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
+import { Search, ExternalLink, MessageSquare, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SelectChat, SelectMessage, SelectSource } from "@/db/schema"
 import { useState } from "react"
@@ -12,6 +12,8 @@ import { readStreamableValue } from "ai/rsc"
 import { createChat } from "@/db/queries/chats-queries"
 import { createMessageAction } from "@/actions/db/messages-actions"
 import { createSourcesAction } from "@/actions/db/sources-actions"
+import ReactMarkdown from "react-markdown"
+
 interface ChatAreaProps {
   className?: string
   initialSources: SelectSource[]
@@ -160,28 +162,32 @@ export default function ChatArea({
   }
 
   return (
-    <div className={cn("flex h-full flex-col items-center", className)}>
+    <div
+      className={cn("flex h-full flex-col items-center text-white", className)}
+    >
       {message.length === 0 ? (
-        <div className="w-full max-w-3xl space-y-6 p-4">
-          <h1 className="text-center text-4xl font-bold">Ask Anything</h1>
+        <div className="flex size-full max-w-3xl flex-col items-center justify-center p-4">
+          <div className="w-full space-y-6">
+            <h1 className="text-center text-4xl font-bold">Ask Anything</h1>
 
-          <div className="relative">
-            <Input
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask any question..."
-              className="pr-12"
-            />
-            <Button
-              onClick={() => handleSearch(input)}
-              disabled={isSearching || !input.trim()}
-              type="submit"
-              size="icon"
-              className="absolute right-1 top-1/2 size-8 -translate-y-1/2"
-            >
-              <Search className="size-4" />
-            </Button>
+            <div className="relative">
+              <Input
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask any question..."
+                className="border-gray-800 bg-gray-900 pr-12 text-white placeholder:text-gray-400"
+              />
+              <Button
+                onClick={() => handleSearch(input)}
+                disabled={isSearching || !input.trim()}
+                type="submit"
+                size="icon"
+                className="absolute right-1 top-1/2 size-8 -translate-y-1/2 bg-white text-gray-900 hover:bg-gray-200"
+              >
+                <Search className="size-4" />
+              </Button>
+            </div>
           </div>
         </div>
       ) : (
@@ -189,36 +195,118 @@ export default function ChatArea({
           {message.map(
             (msg, index) =>
               msg.role === "user" && (
-                <div key={msg.id} className="text-xl font-medium">
+                <div key={msg.id} className="text-xl font-medium text-white">
                   {msg.content}
                 </div>
               )
           )}
 
-          <div className="flex gap-4 overflow-x-auto pb-2">
-            {sources.map(source => (
-              <a
-                key={source.id}
-                href={source.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-32 w-64 flex-none flex-col justify-between rounded-lg border p-4 hover:bg-gray-50"
-              >
-                <h3 className="line-clamp-2 text-sm font-medium">
-                  {source.title}
-                </h3>
-                <p className="mt-2 truncate text-xs text-gray-500">
-                  {source.url}
-                </p>
-              </a>
-            ))}
-          </div>
-
           {message.map(
             (msg, index) =>
               msg.role === "assistant" && (
-                <div key={msg.id} className="prose max-w-none">
-                  {msg.content}
+                <div key={msg.id} className="space-y-6">
+                  <div>
+                    <div className="mb-4 flex items-center gap-2 text-base text-gray-400">
+                      {isSearching ? (
+                        <Loader2 className="size-5 animate-spin" />
+                      ) : (
+                        <Search className="size-5" />
+                      )}
+                      <span className="font-medium">
+                        {isSearching ? "Searching sources..." : "Sources"}
+                      </span>
+                    </div>
+
+                    <div className="relative">
+                      <div className="no-scrollbar flex gap-3 overflow-x-auto pb-4">
+                        <div className="flex flex-nowrap">
+                          {sources.map(source => (
+                            <a
+                              key={source.id}
+                              href={source.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex w-[300px] flex-none flex-col gap-1 rounded-lg border border-gray-800 bg-gray-900/50 p-3 text-sm transition-colors hover:bg-gray-800/50"
+                            >
+                              <div className="line-clamp-2 font-medium text-white">
+                                {source.title}
+                              </div>
+                              <div className="truncate text-xs text-gray-400">
+                                {source.url}
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="mb-3 flex items-center gap-2 text-base text-gray-400">
+                      {isGenerating ? (
+                        <Loader2 className="size-5 animate-spin" />
+                      ) : (
+                        <MessageSquare className="size-5" />
+                      )}
+                      <span className="font-medium">
+                        {isGenerating ? "Generating answer..." : "Answer"}
+                      </span>
+                    </div>
+
+                    <div className="prose prose-invert prose-lg max-w-none text-gray-300">
+                      <ReactMarkdown
+                        components={{
+                          h1: ({ children }) => (
+                            <h1 className="mb-4 text-2xl font-bold">
+                              {children}
+                            </h1>
+                          ),
+                          h2: ({ children }) => (
+                            <h2 className="mb-3 text-xl font-bold">
+                              {children}
+                            </h2>
+                          ),
+                          h3: ({ children }) => (
+                            <h3 className="mb-2 text-lg font-bold">
+                              {children}
+                            </h3>
+                          ),
+                          p: ({ children }) => (
+                            <p className="mb-4">{children}</p>
+                          ),
+                          ul: ({ children }) => (
+                            <ul className="mb-4 list-disc pl-6">{children}</ul>
+                          ),
+                          ol: ({ children }) => (
+                            <ol className="mb-4 list-decimal pl-6">
+                              {children}
+                            </ol>
+                          ),
+                          li: ({ children }) => (
+                            <li className="mb-1">{children}</li>
+                          ),
+                          strong: ({ children }) => (
+                            <strong className="font-bold">{children}</strong>
+                          ),
+                          em: ({ children }) => (
+                            <em className="italic">{children}</em>
+                          ),
+                          code: ({ children }) => (
+                            <code className="rounded bg-gray-800 px-1">
+                              {children}
+                            </code>
+                          ),
+                          blockquote: ({ children }) => (
+                            <blockquote className="border-l-4 border-gray-700 pl-4 italic">
+                              {children}
+                            </blockquote>
+                          )
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
                 </div>
               )
           )}

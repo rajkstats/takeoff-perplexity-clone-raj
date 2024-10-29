@@ -66,6 +66,10 @@ export default function Sidebar({
         New Search
       </Button>
 
+      <div className="mb-4 text-center">
+        <h2 className="font-bold text-neutral-400">Chat History</h2>
+      </div>
+
       <div className="space-y-2">
         {Array.isArray(initialChats) &&
           initialChats.map(chat => {
