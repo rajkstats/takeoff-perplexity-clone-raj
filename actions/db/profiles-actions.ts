@@ -17,6 +17,13 @@ export async function createProfileAction(
       updatedAt: new Date()
     })
 
+    if (!newProfile) {
+      return {
+        isSuccess: false,
+        message: "Failed to create profile"
+      }
+    }
+
     return {
       isSuccess: true,
       message: "Profile created successfully",
