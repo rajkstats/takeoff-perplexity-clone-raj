@@ -1,10 +1,11 @@
 "use server"
 
 import { ActionState } from "@/types";
-import { SelectSource } from "@/db/schema";
+import { SelectSource } from "@/db/schema/sources-schema";
 import { streamText }  from "ai";
 import { createStreamableValue, StreamableValue } from "ai/rsc";
 import { openai } from "@ai-sdk/openai";
+
 
 export async function generateOpenAIResponseAction(
     userQuery: string, 
