@@ -1,19 +1,22 @@
 "use server"
 
-import {
-  createProfile,
-  getProfileByUserId
-} from "@/db/queries/profiles-queries"
-import { InsertProfile, SelectProfile } from "@/db/schema/profiles-schema"
+import { createProfile } from "@/db/queries/profiles-queries"
+import { SelectProfile } from "@/db/schema"
 import { ActionState } from "@/types"
-import { revalidatePath } from "next/cache"
 
 export async function createProfileAction(
-  data: InsertProfile
-): Promise<ActionState<SelectProfile>> {
+  userId: string
+): Promise<ActionState<SelectProfile | undefined>> {
   try {
-    const newProfile = await createProfile(data)
-    revalidatePath("/")
+    const newProfile = await createProfile({
+      userId,
+      membership: "free",
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    })
+
     return {
       isSuccess: true,
       message: "Profile created successfully",
@@ -21,22 +24,9 @@ export async function createProfileAction(
     }
   } catch (error) {
     console.error("Error creating profile", error)
-    return { isSuccess: false, message: "Failed to create profile" }
-  }
-}
-
-export async function getProfileByUserIdAction(
-  userId: string
-): Promise<ActionState<SelectProfile>> {
-  try {
-    const profile = await getProfileByUserId(userId)
     return {
-      isSuccess: true,
-      message: "Profile retrieved successfully",
-      data: profile
+      isSuccess: false,
+      message: "Failed to create profile"
     }
-  } catch (error) {
-    console.error("Error getting profile by user id", error)
-    return { isSuccess: false, message: "Failed to get profile" }
   }
 }
